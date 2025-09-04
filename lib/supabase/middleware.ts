@@ -1,46 +1,38 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+@@
+ import { type NextRequest } from 'next/server'
+ import { updateSession } from '@/lib/supabase/middleware'
+ import { NextResponse } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
-
+async function isAdmin(request: NextRequest) {
+  // Lightweight check using the Supabase session cookie already parsed in updateSession
+  // We re-create the server client here to read the user with app_metadata.
+  const { createServerClient } = await import('@supabase/ssr')
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+        getAll: () => request.cookies.getAll(),
+        setAll: () => {},
       },
-    }
+    },
   )
+  const { data } = await supabase.auth.getUser()
+  const role = (data.user?.app_metadata as any)?.role
+  return role === 'admin'
+}
+ 
+ export async function middleware(request: NextRequest) {
+  return await updateSession(request)
+  const res = await updateSession(request)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!(await isAdmin(request))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
-  return supabaseResponse
-}
+  return res
+ }
