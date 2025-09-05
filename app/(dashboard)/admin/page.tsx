@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { deletePoll } from "@/app/lib/actions/poll-actions";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface Poll {
   id: string;
@@ -24,10 +25,35 @@ export default function AdminPage() {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchAllPolls();
+    // Check if user is admin before showing admin content
+    checkAdminStatus();
   }, []);
+  
+  const checkAdminStatus = async () => {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    
+    if (!data.user) {
+      // Not logged in, redirect to login
+      router.push('/login');
+      return;
+    }
+    
+    // Check if user has admin role in app_metadata
+    const role = (data.user.app_metadata as any)?.role;
+    if (role !== 'admin') {
+      // Not an admin, redirect to home
+      router.push('/');
+      return;
+    }
+    
+    setIsAdmin(true);
+    fetchAllPolls();
+  };
 
   const fetchAllPolls = async () => {
     const supabase = createClient();

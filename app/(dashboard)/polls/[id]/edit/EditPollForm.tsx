@@ -5,6 +5,8 @@ import { updatePoll } from '@/app/lib/actions/poll-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import CSRFToken from '@/components/CSRFToken';
+import { CSRF } from '@/lib/csrf-protection';
 
 export default function EditPollForm({ poll }: { poll: any }) {
   const [question, setQuestion] = useState(poll.question);
@@ -31,6 +33,10 @@ export default function EditPollForm({ poll }: { poll: any }) {
         formData.set('question', question);
         formData.delete('options');
         options.forEach((opt) => formData.append('options', opt));
+        
+        // Get CSRF token from form for server-side validation
+        const csrfToken = formData.get(CSRF.FIELD_NAME) as string;
+        
         const res = await updatePoll(poll.id, formData);
         if (res?.error) {
           setError(res.error);
@@ -76,6 +82,7 @@ export default function EditPollForm({ poll }: { poll: any }) {
       </div>
       {error && <div className="text-red-500">{error}</div>}
       {success && <div className="text-green-600">Poll updated! Redirecting...</div>}
+      <CSRFToken />
       <Button type="submit">Update Poll</Button>
     </form>
   );

@@ -6,6 +6,7 @@
  * This component provides a form interface for users to create new polls.
  * It manages poll question and options, validates inputs, and submits the data
  * to the server via the createPoll action.
+ * Includes CSRF protection to prevent cross-site request forgery attacks.
  */
 
 import { useState } from "react";
@@ -13,6 +14,8 @@ import { createPoll } from "@/app/lib/actions/poll-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CSRFToken from "@/components/CSRFToken";
+import { CSRF } from "@/lib/csrf-protection";
 
 /**
  * Poll Creation Form Component
@@ -64,6 +67,9 @@ export default function PollCreateForm() {
         setError(null);
         setSuccess(false);
         
+        // Get CSRF token from form and add to headers for server-side validation
+        const csrfToken = formData.get(CSRF.FIELD_NAME) as string;
+        
         // Submit poll data to server action
         const res = await createPoll(formData);
         
@@ -107,6 +113,7 @@ export default function PollCreateForm() {
       </div>
       {error && <div className="text-red-500">{error}</div>}
       {success && <div className="text-green-600">Poll created! Redirecting...</div>}
+      <CSRFToken />
       <Button type="submit">Create Poll</Button>
     </form>
   );

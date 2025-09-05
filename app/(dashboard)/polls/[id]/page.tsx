@@ -8,10 +8,15 @@
  * The component also provides options to edit, delete, and share the poll.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Import DOMPurify for XSS protection
+import DOMPurify from 'isomorphic-dompurify';
+// Import CSRF protection
+import { CSRF } from '@/lib/csrf-protection';
 
 /**
  * Mock poll data for development and testing
@@ -48,6 +53,8 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // In a real app, you would fetch the poll data based on the ID
   const poll = mockPoll;
@@ -55,24 +62,53 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
   const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
 
   /**
+   * Fetch CSRF token when component mounts
+   */
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch('/api/csrf');
+        if (response.ok) {
+          const data = await response.json();
+          setCsrfToken(data.csrfToken);
+        }
+      } catch (err) {
+        console.error('Failed to fetch CSRF token:', err);
+        setError('Failed to initialize security. Please refresh the page.');
+      }
+    };
+    
+    fetchCsrfToken();
+  }, []);
+
+  /**
    * Handles the vote submission process
    * 
    * This function is triggered when a user submits their vote.
-   * It shows a loading state, simulates an API call to submit the vote,
+   * It shows a loading state, makes an API call to submit the vote with CSRF protection,
    * and updates the UI to display results after voting.
-   * In a production environment, this would call the actual submitVote API.
    */
-  const handleVote = () => {
+  const handleVote = async () => {
     if (!selectedOption) return; // Don't proceed if no option is selected
     
     setIsSubmitting(true); // Show loading state
+    setError(null);
     
-    // Simulate API call with a delay
-    // In a real app: await submitVote(params.id, selectedOption);
-    setTimeout(() => {
-      setHasVoted(true);      // Update UI to show results
+    try {
+      // Submit vote with CSRF token for security
+      const result = await submitVote(poll.id, selectedOption, csrfToken);
+      
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        setHasVoted(true); // Update UI to show results
+        // In a real app, you would fetch updated poll data here
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsSubmitting(false); // Hide loading state
-    }, 1000);
+    }
   };
 
   /**
@@ -104,8 +140,8 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{poll.title}</CardTitle>
-          <CardDescription>{poll.description}</CardDescription>
+          <CardTitle className="text-2xl">{DOMPurify.sanitize(poll.title)}</CardTitle>
+          <CardDescription>{DOMPurify.sanitize(poll.description)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!hasVoted ? (
@@ -116,7 +152,7 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
                   className={`p-3 border rounded-md cursor-pointer transition-colors ${selectedOption === option.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-slate-50'}`}
                   onClick={() => setSelectedOption(option.id)}
                 >
-                  {option.text}
+                  {DOMPurify.sanitize(option.text)}
                 </div>
               ))}
               <Button 
@@ -133,7 +169,7 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
               {poll.options.map((option) => (
                 <div key={option.id} className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span>{option.text}</span>
+                    <span>{DOMPurify.sanitize(option.text)}</span>
                     <span>{getPercentage(option.votes)}% ({option.votes} votes)</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2.5">
@@ -151,7 +187,7 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           )}
         </CardContent>
         <CardFooter className="text-sm text-slate-500 flex justify-between">
-          <span>Created by {poll.createdBy}</span>
+          <span>Created by {DOMPurify.sanitize(poll.createdBy)}</span>
           <span>Created on {new Date(poll.createdAt).toLocaleDateString()}</span>
         </CardFooter>
       </Card>
