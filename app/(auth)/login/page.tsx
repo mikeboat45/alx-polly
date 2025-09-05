@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Login Page Component
+ * 
+ * This component renders the login form and handles user authentication.
+ * It uses server actions to validate credentials and establish a user session.
+ */
+
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,26 +15,51 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { login } from '@/app/lib/actions/auth-actions';
 
+/**
+ * Login Page Component
+ * 
+ * Renders a form that allows users to authenticate with their email and password.
+ * Handles form submission, validation, and authentication via server actions.
+ * On successful login, redirects to the polls dashboard.
+ * 
+ * @returns React component for the login page
+ */
 export default function LoginPage() {
+  // State for error messages and loading status
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handles form submission for user login
+   * 
+   * This function processes the login form submission, extracts credentials,
+   * and attempts to authenticate the user via the login server action.
+   * On success, it redirects to the polls page. On failure, it displays an error.
+   * 
+   * @param event - The form submission event
+   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
-    setError(null);
+    setLoading(true); // Show loading state
+    setError(null);   // Clear any previous errors
 
+    // Extract form data
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    // Attempt to login using server action
     const result = await login({ email, password });
 
+    // Handle authentication result
     if (result?.error) {
+      // Show error message if login failed
       setError(result.error);
       setLoading(false);
     } else {
-      window.location.href = '/polls'; // Full reload to pick up session
+      // Redirect to polls page on successful login
+      // Full page reload ensures the session is properly established
+      window.location.href = '/polls';
     }
   };
 

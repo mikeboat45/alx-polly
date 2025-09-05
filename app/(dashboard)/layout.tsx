@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * Dashboard Layout Component
+ * 
+ * This component provides the common layout structure for all dashboard pages.
+ * It includes navigation, user authentication checks, and a profile dropdown menu.
+ * The layout ensures that only authenticated users can access dashboard pages.
+ */
+
 import { ReactNode, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,21 +23,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/app/lib/context/auth-context";
 
+/**
+ * Dashboard Layout Component
+ * 
+ * Renders the common layout for all dashboard pages, including navigation header
+ * and authentication protection. Redirects unauthenticated users to the login page.
+ * 
+ * @param children - The child components to render within the dashboard layout
+ * @returns React component for the dashboard layout
+ */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  // Access authentication context for user data and auth functions
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
 
+  /**
+   * Authentication check effect
+   * 
+   * Redirects to login page if user is not authenticated
+   * This protects all dashboard routes from unauthorized access
+   */
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
 
+  /**
+   * Handles user sign out process
+   * 
+   * Signs out the current user and redirects to login page
+   */
   const handleSignOut = async () => {
-    await signOut();
-    router.push("/login");
+    await signOut(); // Call auth context signOut function
+    router.push("/login"); // Redirect to login page
   };
 
+  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -38,6 +68,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // Don't render anything if user is not authenticated
+  // This prevents flash of dashboard content before redirect
   if (!user) {
     return null;
   }

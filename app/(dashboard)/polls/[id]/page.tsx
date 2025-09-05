@@ -1,11 +1,22 @@
 'use client';
 
+/**
+ * Poll Detail Page Component
+ * 
+ * This component displays a single poll with its details and voting interface.
+ * It allows users to view poll information, cast votes, and see results after voting.
+ * The component also provides options to edit, delete, and share the poll.
+ */
+
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Mock data for a single poll
+/**
+ * Mock poll data for development and testing
+ * In a production environment, this would be fetched from the database
+ */
 const mockPoll = {
   id: '1',
   title: 'Favorite Programming Language',
@@ -22,29 +33,56 @@ const mockPoll = {
   createdBy: 'John Doe',
 };
 
+/**
+ * Poll Detail Page Component
+ * 
+ * Renders a detailed view of a poll with voting functionality.
+ * Users can select an option, submit their vote, and view results.
+ * The page also provides navigation, editing, deletion, and sharing options.
+ * 
+ * @param params - Object containing the poll ID from the URL parameters
+ * @returns React component for the poll detail page
+ */
 export default function PollDetailPage({ params }: { params: { id: string } }) {
+  // State for tracking user interaction with the poll
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // In a real app, you would fetch the poll data based on the ID
   const poll = mockPoll;
+  // Calculate total votes across all options
   const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
 
+  /**
+   * Handles the vote submission process
+   * 
+   * This function is triggered when a user submits their vote.
+   * It shows a loading state, simulates an API call to submit the vote,
+   * and updates the UI to display results after voting.
+   * In a production environment, this would call the actual submitVote API.
+   */
   const handleVote = () => {
-    if (!selectedOption) return;
+    if (!selectedOption) return; // Don't proceed if no option is selected
     
-    setIsSubmitting(true);
+    setIsSubmitting(true); // Show loading state
     
-    // Simulate API call
+    // Simulate API call with a delay
+    // In a real app: await submitVote(params.id, selectedOption);
     setTimeout(() => {
-      setHasVoted(true);
-      setIsSubmitting(false);
+      setHasVoted(true);      // Update UI to show results
+      setIsSubmitting(false); // Hide loading state
     }, 1000);
   };
 
+  /**
+   * Calculates the percentage of votes for a given option
+   * 
+   * @param votes - Number of votes for the option
+   * @returns Percentage of total votes (rounded to nearest integer)
+   */
   const getPercentage = (votes: number) => {
-    if (totalVotes === 0) return 0;
+    if (totalVotes === 0) return 0; // Prevent division by zero
     return Math.round((votes / totalVotes) * 100);
   };
 

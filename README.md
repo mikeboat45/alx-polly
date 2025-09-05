@@ -81,9 +81,31 @@ npm install
 
 ### 3. Environment Variables
 
-The project uses Supabase for its backend. An environment file `.env.local` is needed.Use the keys you created during the Supabase setup process.
+The project uses Supabase for its backend. Create an environment file `.env.local` in the root directory with the following variables:
 
-### 4. Running the Development Server
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+You can find these keys in your Supabase project dashboard under Project Settings > API.
+
+### 4. Database Setup
+
+ALX Polly requires specific tables in your Supabase database. You can set these up manually or use the SQL migrations provided:
+
+1. Navigate to the Supabase dashboard for your project
+2. Go to the SQL Editor
+3. Create the following tables:
+   - `users`: For user profiles
+   - `polls`: For poll data
+   - `options`: For poll options
+   - `votes`: For tracking user votes
+
+Alternatively, you can use the SQL setup script in `scripts/setup-db.sql` if available.
+
+### 5. Running the Development Server
 
 Start the application in development mode:
 
@@ -92,5 +114,44 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
+
+## Usage Examples
+
+### Creating a Poll
+
+1. Log in to your account
+2. Navigate to "Create Poll" in the dashboard
+3. Enter your poll question
+4. Add at least two options (you can add more as needed)
+5. Click "Create Poll" to publish
+
+### Voting on a Poll
+
+1. Browse available polls from the dashboard
+2. Click on a poll to view details
+3. Select your preferred option
+4. Click "Submit Vote"
+5. View real-time results after voting
+
+### Managing Your Polls
+
+1. Go to "My Polls" in the dashboard
+2. View statistics for your created polls
+3. Edit or delete polls as needed
+4. Share polls via the provided link
+
+## Testing
+
+To run the test suite:
+
+```bash
+npm test
+```
+
+For end-to-end testing with Cypress:
+
+```bash
+npm run cypress:open
+```
 
 Good luck, engineer! This is your chance to step into the shoes of a security professional and make a real impact on the quality and safety of this application. Happy hunting!
